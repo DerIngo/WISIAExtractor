@@ -5,6 +5,10 @@ import deringo.wisia.taxon.TaxonInformation;
 public class TestMain {
 
     public static void main(String[] args) {
+        WisiaExtraktor.check();
+    }
+    
+    public static void einzelTest() {
         int leereSeite = 1; // Beispiel für leere Seite
         int testudoHermanni = 19442;
         int chersinaAngulata = 2510;

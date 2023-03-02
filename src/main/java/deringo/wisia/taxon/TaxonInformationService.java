@@ -73,4 +73,17 @@ public class TaxonInformationService {
     private static String getFilename(int knotenId) {
         return (folderName + File.separator + (knotenId/1000) + File.separator + fileName + knotenId);
     }
+    
+    public static boolean isEmpty(TaxonInformation information) {
+        if (information.gueltigerName == null) {
+            return true;
+        }
+        
+        if (information.taxonomie == null) {
+            System.out.println("(knotenId: " + information.knotenId + ") " +"taxonomie NULL");
+            return true;
+        }
+
+        return false;
+    }
 }
