@@ -54,7 +54,11 @@ public class EinObjektExporter {
     }
     
     public static List<Art> importArten() {
-        return loadArten();
+        return loadArten(getFilename());
+    }
+    
+    public static List<Art> importArten(String filename) {
+        return loadArten(filename);
     }
     
     private static void saveArt(List<Art> arten) {
@@ -75,9 +79,9 @@ public class EinObjektExporter {
         System.out.println("save Arten size: " + arten.size());
     }
     
-    private static List<Art> loadArten() {
+    private static List<Art> loadArten(String filename) {
         try {
-            FileInputStream fis = new FileInputStream(new File(getFilename()));
+            FileInputStream fis = new FileInputStream(filename);
             GZIPInputStream gz = new GZIPInputStream(fis);
             ObjectInputStream ois = new ObjectInputStream(gz);
             
@@ -90,7 +94,7 @@ public class EinObjektExporter {
             return art;
             
         } catch (FileNotFoundException e) {
-            System.err.println("Datei nicht gefunden: " + getFilename());
+            System.err.println("Datei nicht gefunden: " + filename);
             return null;
         } catch (IOException | ClassNotFoundException e) {
             System.err.println("An error occurred: " + e);

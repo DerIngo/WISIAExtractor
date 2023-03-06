@@ -127,4 +127,14 @@ public class WisiaExtraktor {
         System.out.println(message);
         return alleArten;
     }
+    
+    public static List<Art> importEinObject(String filename) {
+        long start = System.currentTimeMillis();
+        List<Art> alleArten = EinObjektExporter.importArten(filename);
+        long end = System.currentTimeMillis();
+        long durationInSec = (end - start) / 1000;
+        String message = String.format("Alle %d Arten importiert in %d Sekunden.", alleArten.size(), durationInSec);
+        System.out.println(message);
+        return alleArten;
+    }
 }
