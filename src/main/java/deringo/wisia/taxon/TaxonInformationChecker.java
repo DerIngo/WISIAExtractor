@@ -13,7 +13,7 @@ public class TaxonInformationChecker {
     
     
     public static void main(String[] args) {
-        checkTaxonomie();
+        check();
     }
     
     public static void check() {
