@@ -22,7 +22,7 @@ import deringo.wisia.art.Art;
  * Importiert die zuvor exportierte Datei.
  *
  */
-public class EinObjektExporter implements WisiaExporter {
+public class EinObjektExporter {
     private static String folderName = "files/export";
     private static String fileName = "alleArten.obj";
 
