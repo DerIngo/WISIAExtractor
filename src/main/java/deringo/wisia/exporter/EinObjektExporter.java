@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
@@ -61,6 +62,10 @@ public class EinObjektExporter {
         return loadArten(filename);
     }
     
+    public static List<Art> importArten(InputStream inputStream) {
+        return loadArten(inputStream);
+    }
+    
     private static void saveArt(List<Art> arten) {
         try {
             Path pathToFile = Paths.get(getFilename());
@@ -82,20 +87,31 @@ public class EinObjektExporter {
     private static List<Art> loadArten(String filename) {
         try {
             FileInputStream fis = new FileInputStream(filename);
-            GZIPInputStream gz = new GZIPInputStream(fis);
+            List<Art> arten = loadArten(fis);
+            fis.close();
+            return arten;
+        } catch (FileNotFoundException e) {
+            System.err.println("Datei nicht gefunden: " + filename);
+            return null;
+        } catch (Exception e) {
+            System.err.println("An error occurred: " + e);
+            return null;
+        }
+    }
+    
+    private static List<Art> loadArten(InputStream inputStream) {
+        try {
+            GZIPInputStream gz = new GZIPInputStream(inputStream);
             ObjectInputStream ois = new ObjectInputStream(gz);
             
             @SuppressWarnings("unchecked")
             List<Art> art = (List<Art>) ois.readObject();
-            
+
+            gz.close();
             ois.close();
-            fis.close();
             
             return art;
             
-        } catch (FileNotFoundException e) {
-            System.err.println("Datei nicht gefunden: " + filename);
-            return null;
         } catch (IOException | ClassNotFoundException e) {
             System.err.println("An error occurred: " + e);
             return null;

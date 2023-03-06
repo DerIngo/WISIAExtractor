@@ -1,5 +1,6 @@
 package deringo.wisia;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -137,4 +138,11 @@ public class WisiaExtraktor {
         System.out.println(message);
         return alleArten;
     }
+    
+    public static List<Art> importEinObjectFromResource() {
+        InputStream is = WisiaExtraktor.class.getClassLoader().getResourceAsStream("alleArten.obj");
+        List<Art> alleArten = EinObjektExporter.importArten(is);
+        return alleArten;
+    }
+        
 }
