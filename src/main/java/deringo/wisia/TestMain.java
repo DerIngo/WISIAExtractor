@@ -1,11 +1,16 @@
 package deringo.wisia;
 
+import java.util.List;
+
+import deringo.wisia.art.Art;
+import deringo.wisia.exporter.EinObjektExporter;
 import deringo.wisia.taxon.TaxonInformation;
 
 public class TestMain {
 
     public static void main(String[] args) {
-        WisiaExtraktor.check();
+        List<Art> alleArten = EinObjektExporter.importArten();
+        System.out.println(alleArten.size());
     }
     
     public static void einzelTest() {

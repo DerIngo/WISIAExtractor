@@ -3,6 +3,9 @@ package deringo.wisia;
 import java.util.ArrayList;
 import java.util.List;
 
+import deringo.wisia.art.Art;
+import deringo.wisia.art.ArtService;
+import deringo.wisia.exporter.EinObjektExporter;
 import deringo.wisia.fussnote.Fussnote;
 import deringo.wisia.fussnote.FussnoteService;
 import deringo.wisia.taxon.TaxonInformation;
@@ -21,7 +24,7 @@ public class WisiaExtraktor {
     }
     
     /**
-     * Läd die Seiten zu den Knoten IDs 0 bis 54999 herunter.
+     * Läd die Seiten zu den Knoten IDs 0 bis maxKnotenId herunter.
      */
     public static void downloadTaxonPages() {
         for (int i= 0; i< maxKnotenId; i++) {
@@ -33,7 +36,7 @@ public class WisiaExtraktor {
     }
 
     /**
-     * Verarbeitet die Seiten zu den Knoten IDs 0 bis 54999
+     * Verarbeitet die Seiten zu den Knoten IDs 0 bis maxKnotenId
      */
     public static void extractTaxonInformation() {
         for (int i= 0; i<maxKnotenId; i++) {
@@ -52,6 +55,19 @@ public class WisiaExtraktor {
         TaxonInformationChecker.check();
         System.out.println("END check");
     }
+    
+    /**
+     * Transformiert TaxonInformation zu Art zu den Knoten IDs 0 bis maxKnotenId
+     */
+    public static void transformTaxonInformation() {
+        for (int i= 0; i<maxKnotenId; i++) {
+            if (i%1000 == 0) {
+                System.out.println("Start transform " + i + " to " + (i+999));
+            }
+            ArtService.getArt(i);
+        }
+    }
+    
     
     /**
      * Liefert alle Informationen zu einer KnotenId, die auf <a href="https://www.wisia.de/GetTaxInfo">www.wisia.de/GetTaxInfo</a> angezeigt werden.
@@ -73,5 +89,42 @@ public class WisiaExtraktor {
         List<TaxonInformation> alleTaxonInformation = getAllTaxonInformation();
         alleTaxonInformation.removeIf(information -> TaxonInformationService.isEmpty(information));
         return alleTaxonInformation;
+    }
+    
+    public static List<Art> getAllArt() {
+        List<Art> alleArten = new ArrayList<>();
+        for (int i= 0; i<maxKnotenId; i++) {
+            Art art = ArtService.getArt(i);
+            if (art != null) {
+                alleArten.add(art);
+            }
+        }
+        return alleArten;
+    }
+    
+    public static void exportEinObject() {
+        long start = System.currentTimeMillis();
+        List<Art> alleArten = WisiaExtraktor.getAllArt();
+        long end = System.currentTimeMillis();
+        long durationInSec = (end - start) / 1000;
+        String message = String.format("Alle %d Arten geladen in %d Sekunden.", alleArten.size(), durationInSec);
+        System.out.println(message);
+        
+        start = System.currentTimeMillis();
+        EinObjektExporter.export(alleArten);
+        end = System.currentTimeMillis();
+        durationInSec = (end - start) / 1000;
+        message = String.format("Alle %d Arten exportiert in %d Sekunden.", alleArten.size(), durationInSec);
+        System.out.println(message);
+    }
+    
+    public static List<Art> importEinObject() {
+        long start = System.currentTimeMillis();
+        List<Art> alleArten = EinObjektExporter.importArten();
+        long end = System.currentTimeMillis();
+        long durationInSec = (end - start) / 1000;
+        String message = String.format("Alle %d Arten importiert in %d Sekunden.", alleArten.size(), durationInSec);
+        System.out.println(message);
+        return alleArten;
     }
 }

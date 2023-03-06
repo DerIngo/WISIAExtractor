@@ -3,6 +3,8 @@ package deringo.wisia.taxon;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.gargoylesoftware.htmlunit.html.DomNode;
 import com.gargoylesoftware.htmlunit.html.DomNodeList;
 import com.gargoylesoftware.htmlunit.html.DomText;
@@ -107,11 +109,11 @@ public class TaxonExtraktor {
             break;
         }
         case 1: {
-            taxonInformation.gueltigerName = new TaxonInformation.GueltigerName(taxinfodatas.get(0).asNormalizedText(), null);
+            taxonInformation.gueltigerName = new TaxonInformation.GueltigerName(StringUtils.trim(taxinfodatas.get(0).asNormalizedText()), null);
             break;
         }
         case 2: {
-            taxonInformation.gueltigerName = new TaxonInformation.GueltigerName(taxinfodatas.get(0).asNormalizedText(), taxinfodatas.get(1).asNormalizedText());
+            taxonInformation.gueltigerName = new TaxonInformation.GueltigerName(StringUtils.trim(taxinfodatas.get(0).asNormalizedText()), StringUtils.trim(taxinfodatas.get(1).asNormalizedText()));
             break;
         }
         default:
@@ -186,6 +188,9 @@ public class TaxonExtraktor {
                 throw new IllegalArgumentException("KnotenID: "+taxonInformation.knotenId+"; Unexpected value: " + taxinfodatas.size());
             }
             
+            String lastLineRegelwerk1 = regelwerk1;
+            String lastLineRegelwerk2 = regelwerk2;
+            
             HtmlTableDataCell cell = (HtmlTableDataCell)row.getChildNodes().get(1);
             if (cell.getChildElementCount() == 1) {
                 DomNodeList<DomNode> l = cell.getChildNodes();
@@ -198,6 +203,11 @@ public class TaxonExtraktor {
             
             String nameImRegelwerk = row.getChildNodes().get(7).asNormalizedText().trim();
 
+            if (StringUtils.isBlank(regelwerk1) && StringUtils.isBlank(regelwerk2) && !StringUtils.isBlank(nameImRegelwerk)) {
+                regelwerk1 = lastLineRegelwerk1;
+                regelwerk2 = lastLineRegelwerk2;
+            }
+            
             Schutz schutz = new Schutz(regelwerk1, regelwerk2, fussnote1, fussnote2, nameImRegelwerk);
             schutzListe.add(schutz);
         }

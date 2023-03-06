@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import deringo.wisia.WisiaExtraktor;
+import deringo.wisia.taxon.TaxonInformation.Schutz;
 import deringo.wisia.util.Utils;
 
 public class TaxonInformationChecker {
@@ -42,7 +43,47 @@ public class TaxonInformationChecker {
                 System.err.println("(knotenId: " + knotenId + ") " + "gueltigerName != null, aber gueltigerName1 ist blank");
             }
         }
+        
+        // Der Name im Regelwerk muss immer derselbe sein -> NEIN
+        // Der Name muss pro Regelwerk und Anhang eindeutig sein -> NEIN
+        // Der Name innerhalb eines Regelwerkes ist NICHT eindeutig -> kein Check
+        boolean nameInRegelwerkEindeutig = true;
+        if (nameInRegelwerkEindeutig) {
+            for (TaxonInformation information : alleTaxonInformation) {
+                Map<String, Set<String>> nameImRegelwerkMap = new HashMap<>();
+                for (Schutz schutz : information.schutzListe) {
+                    String regelwerk = schutz.regelwerk1() + ", " + schutz.regelwerk2();
+                    String nameImRegelwerk = schutz.nameImRegelwerk();
+                    Set<String> nameImRegelwerkSet = nameImRegelwerkMap.get(regelwerk);
+                    if (nameImRegelwerkSet == null) {
+                        nameImRegelwerkSet = new HashSet<>();
+                        nameImRegelwerkMap.put(regelwerk, nameImRegelwerkSet);
+                    }
+                    nameImRegelwerkSet.add(nameImRegelwerk);
+                }
+                nameImRegelwerkMap.forEach((key, value) -> {
+                    if (value.size() != 1) {
+                        int knotenId = information.knotenId;
+                        String message = String.format("(knotenId: %d) Name im Regelwerk uneindeutig.", knotenId);
+                        System.err.println(message);
+                        
+//                        List<Schutz> schutzs = new ArrayList<>();
+//                        for (Schutz schutz : information.schutzListe) {
+//                            String regelwerk = schutz.regelwerk1() + ", " + schutz.regelwerk2();
+//                            if (key.equals(regelwerk) || schutz.regelwerk1() == null) {
+//                                schutzs.add(schutz);
+//                            }
+//                        }
+//                        
+//                        schutzs.forEach(schutz -> System.out.println(schutz));
+                        
+                    }
+                });
+            }
+        }
+        
         // TODO weitere Checks
+        
     }
     
     public static void checkTaxonomie() {
