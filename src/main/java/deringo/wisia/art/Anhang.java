@@ -7,8 +7,8 @@ import java.util.List;
 public class Anhang implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    public String name;
-    public List<Fussnote> fussnoten = new ArrayList<>();
+    private String name;
+    private List<Fussnote> fussnoten = new ArrayList<>();
 
     @Override
     public String toString() {

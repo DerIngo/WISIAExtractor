@@ -9,9 +9,9 @@ import java.util.Set;
 public class Regelwerk implements Serializable {
     private static final long serialVersionUID = 1L;
     
-    public String name;
-    public Set<String> namenImRegelwerk = new LinkedHashSet<>();
-    public List<Anhang> anhaenge = new ArrayList<>();
+    private String name;
+    private Set<String> namenImRegelwerk = new LinkedHashSet<>();
+    private List<Anhang> anhaenge = new ArrayList<>();
 
     @Override
     public String toString() {
