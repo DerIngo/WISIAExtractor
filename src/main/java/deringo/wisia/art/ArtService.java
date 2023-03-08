@@ -19,11 +19,11 @@ public class ArtService {
     private static String folderName = "files/art";
     private static String fileName = "art";
 
-    public static Art getArt(int knotenId) {
+    public static Art getArt(Integer knotenId) {
         return getArt(knotenId, false);
     }
     
-    public static Art getArt(int knotenId, boolean loadOnly) {
+    public static Art getArt(Integer knotenId, boolean loadOnly) {
         Art art = loadArt(knotenId);
         if (art == null && !loadOnly) {
             art = TaxonInformationTransformator.transform(knotenId);
@@ -34,7 +34,7 @@ public class ArtService {
         return art;
     }
     
-    private static Art loadArt(int knotenId) {
+    private static Art loadArt(Integer knotenId) {
         try {
             FileInputStream fis = new FileInputStream(new File(getFilename(knotenId)));
             GZIPInputStream gz = new GZIPInputStream(fis);
@@ -59,7 +59,7 @@ public class ArtService {
         }
     }
     
-    private static void saveArt(int knotenId) {
+    private static void saveArt(Integer knotenId) {
         Art art = TaxonInformationTransformator.transform(knotenId);
 
         try {
@@ -79,7 +79,7 @@ public class ArtService {
         System.out.println("save Art" + knotenId);
     }
     
-    private static String getFilename(int knotenId) {
+    private static String getFilename(Integer knotenId) {
         return (folderName + File.separator + (knotenId/1000) + File.separator + fileName + knotenId);
     }
 

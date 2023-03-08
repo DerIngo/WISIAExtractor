@@ -1,4 +1,5 @@
 /files/
+/src/main/resources/alleArten.obj
 
 /* Gitignore Maven*/
 target/

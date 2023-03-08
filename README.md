@@ -24,7 +24,20 @@ flowchart TD
     C[Daten validieren] --> D
     D[Daten verarbeiten] --> E
     E[Daten exportieren] --> F
-    E --> G
-    F[SQL Script]
-    G[serialisierter Objekt Graph]
+    G[serialisiertes Objekt]
+~~~
+
+## In anderen Projekten verwenden
+Serialisiertes Java Objekt generieren lassen:
+
+~~~Java
+WisiaExtraktor.exportEinObject();
+~~~
+
+Die generierte Datei alleArten.obj nach src/main/resources kopieren.<br/>
+Maven mit package laufen lassen und die so erzeugte WISIAExtractor-0.0.1-SNAPSHOT.jar Datei in das Ziel-Projekt einbinden.<BR/
+Im Ziel-Projekt verwenden mit:
+
+~~~Java
+List<Art> alleArten = WisiaExtraktor.importEinObjectFromResource();
 ~~~

@@ -3,13 +3,13 @@ package deringo.wisia;
 import java.util.List;
 
 import deringo.wisia.art.Art;
-import deringo.wisia.exporter.EinObjektExporter;
 import deringo.wisia.taxon.TaxonInformation;
 
 public class TestMain {
 
     public static void main(String[] args) {
-        List<Art> alleArten = EinObjektExporter.importArten();
+        WisiaExtraktor.exportEinObject();
+        List<Art> alleArten = WisiaExtraktor.importEinObjectFromResource();
         System.out.println(alleArten.size());
     }
     
