@@ -8,9 +8,11 @@ import org.apache.commons.lang3.StringUtils;
 import deringo.wisia.art.Anhang;
 import deringo.wisia.art.Art;
 import deringo.wisia.art.Fussnote;
+import deringo.wisia.art.LandessprachlicherName;
 import deringo.wisia.art.Regelwerk;
 import deringo.wisia.art.Unterschutzstellung;
 import deringo.wisia.taxon.TaxonInformation.DetaillierteSchutzdaten;
+import deringo.wisia.taxon.TaxonInformation.LandesprName;
 import deringo.wisia.taxon.TaxonInformation.Schutz;
 
 public class TaxonInformationTransformator {
@@ -48,7 +50,11 @@ public class TaxonInformationTransformator {
         art.setGueltigerName2(StringUtils.trim(taxonInformation.gueltigerName.gueltigerName2()));
         art.setGruppe(taxonInformation.gruppe);
         art.setTaxonomie(taxonInformation.taxonomie);
-        art.setLandesprNamen(taxonInformation.landesprNamen);
+        for (LandesprName ln : taxonInformation.landesprNamen) {
+            LandessprachlicherName newLN = new LandessprachlicherName(ln.land(), ln.landesprName());
+            art.getLandesprNamen().add(newLN);
+            
+        }
         
         for (Schutz schutz : taxonInformation.schutzListe) {
             String regelwerkName = schutz.regelwerk1();

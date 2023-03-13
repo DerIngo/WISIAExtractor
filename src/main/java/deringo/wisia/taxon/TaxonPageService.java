@@ -28,10 +28,29 @@ public class TaxonPageService {
             savePage(knotenId);
             page = loadPage(knotenId);
         }
+        if (page != null && !checkORA01000(page, knotenId)) {
+            TaxonPageService.deletePage(knotenId);
+            System.err.println("ORA-01000: maximum open cursors exceeded found. Try to reload once.");
+            page = loadPage(knotenId);
+            if (page != null && !checkORA01000(page, knotenId)) {
+                TaxonPageService.deletePage(knotenId);
+                System.err.println("ORA-01000: maximum open cursors exceeded found. Please try to reload later.");
+                page = null;
+            }
+        }
+        
         if (page == null) {
             System.err.println("Keine Page :(");
         }
         return page;
+    }
+    
+    private static final String ORA01000 = "ORA-01000: maximum open cursors exceeded";
+    private static boolean checkORA01000(HtmlPage page, int knotenId) {
+        if (!page.asNormalizedText().contains(ORA01000)) {
+            return true;
+        }
+        return false;
     }
     
     private static HtmlPage loadPage(int knotenId) {
@@ -89,4 +108,12 @@ public class TaxonPageService {
         return (folderName + File.separator + (knotenId/1000) + File.separator + fileName + knotenId);
     }
 
+    public static void deletePage(int knotenId) {
+        Path pathToFile = Paths.get(getFilename(knotenId));
+        try {
+            Files.deleteIfExists(pathToFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

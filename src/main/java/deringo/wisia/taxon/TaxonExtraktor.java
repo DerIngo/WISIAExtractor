@@ -2,6 +2,8 @@ package deringo.wisia.taxon;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -9,11 +11,13 @@ import com.gargoylesoftware.htmlunit.html.DomNode;
 import com.gargoylesoftware.htmlunit.html.DomNodeList;
 import com.gargoylesoftware.htmlunit.html.DomText;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
+import com.gargoylesoftware.htmlunit.html.HtmlImage;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlTableDataCell;
 import com.gargoylesoftware.htmlunit.html.HtmlTableRow;
 
 import deringo.wisia.taxon.TaxonInformation.DetaillierteSchutzdaten;
+import deringo.wisia.taxon.TaxonInformation.LandesprName;
 import deringo.wisia.taxon.TaxonInformation.Schutz;
 import deringo.wisia.util.Utils;
 
@@ -158,11 +162,20 @@ public class TaxonExtraktor {
     }
 
     private void extractLandesprNamen(HtmlTableDataCell taxinforubrik, List<HtmlTableDataCell> taxinfodatas) {
-        List<String> landesprNamen = new ArrayList<>();
+        List<LandesprName> landesprNamen = new ArrayList<>();
         for (HtmlTableDataCell cell : taxinfodatas) {
+            
             String landesprName = cell.asNormalizedText().trim();
             if (!Utils.isBlank(landesprName)) {
-                landesprNamen.add(landesprName);
+                String land = null;
+                String flagge = ((HtmlImage) cell.getPreviousElementSibling().getFirstChild()).getSrcAttribute();
+                String pattern = "/images/flagge_mini_(.*)\\.gif";
+                Pattern r = Pattern.compile(pattern);
+                Matcher m = r.matcher(flagge);
+                if (m.find( )) {
+                    land = m.group(0);
+                }
+                landesprNamen.add(new LandesprName(land, landesprName));
             }
         }
         

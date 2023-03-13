@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
+
 
 public class Art implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -16,13 +18,23 @@ public class Art implements Serializable {
     private String gruppe;
     private List<String> taxonomie = new ArrayList<>();
     private List<String> synonyme = new ArrayList<>();
-    private List<String> landesprNamen = new ArrayList<>();
+    private List<LandessprachlicherName> landesprNamen = new ArrayList<>();
 
     private List<Regelwerk> regelwerke = new ArrayList<>();
     private List<Unterschutzstellung> detaillierteSchutzdaten = new ArrayList<>();
     
     private String ergaenzendeAnmerkung;
 
+    public String getDeutscherName() {
+        for (LandessprachlicherName name : landesprNamen) {
+            if (StringUtils.equalsIgnoreCase("germany", name.getLand())) {
+                return name.getLandessprachlicherName();
+            }
+        }
+        return null;
+    }
+    
+    
     @Override
     public String toString() {
         return "Art [knoten_id=" + knoten_id + ", wissenschaftlicherName=" + wissenschaftlicherName
@@ -80,11 +92,11 @@ public class Art implements Serializable {
         this.synonyme = synonyme;
     }
 
-    public List<String> getLandesprNamen() {
+    public List<LandessprachlicherName> getLandesprNamen() {
         return landesprNamen;
     }
 
-    public void setLandesprNamen(List<String> landesprNamen) {
+    public void setLandesprNamen(List<LandessprachlicherName> landesprNamen) {
         this.landesprNamen = landesprNamen;
     }
 

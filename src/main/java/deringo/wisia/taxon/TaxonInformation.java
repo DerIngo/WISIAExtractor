@@ -34,7 +34,18 @@ public class TaxonInformation implements Serializable {
     
     List<String> synonyme;
     
-    List<String> landesprNamen;
+    List<LandesprName> landesprNamen;
+    public record LandesprName (String land, String landesprName) implements Serializable {
+        public LandesprName (String land, String landesprName) {
+            this.land = land;
+            this.landesprName = landesprName;
+        }
+
+        @Override
+        public String toString() {
+            return "LandesprName [land=" + land + ", landesprName=" + landesprName + "]";
+        }
+    }
     
     List<Schutz> schutzListe;
     public record Schutz (String regelwerk1, String regelwerk2, String fussnote1, String fussnote2, String nameImRegelwerk) implements Serializable {
