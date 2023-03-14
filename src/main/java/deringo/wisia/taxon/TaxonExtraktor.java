@@ -173,7 +173,7 @@ public class TaxonExtraktor {
                 Pattern r = Pattern.compile(pattern);
                 Matcher m = r.matcher(flagge);
                 if (m.find( )) {
-                    land = m.group(0);
+                    land = m.group(1);
                 }
                 landesprNamen.add(new LandesprName(land, landesprName));
             }
