@@ -4,8 +4,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
-
 
 public class Art implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -18,30 +16,23 @@ public class Art implements Serializable {
     private String gruppe;
     private List<String> taxonomie = new ArrayList<>();
     private List<String> synonyme = new ArrayList<>();
-    private List<LandessprachlicherName> landesprNamen = new ArrayList<>();
-
+    private String deutscherName;
+    private String englischerName;
+    
     private List<Regelwerk> regelwerke = new ArrayList<>();
     private List<Unterschutzstellung> detaillierteSchutzdaten = new ArrayList<>();
     
     private String ergaenzendeAnmerkung;
 
-    public String getDeutscherName() {
-        for (LandessprachlicherName name : landesprNamen) {
-            if (StringUtils.equalsIgnoreCase("germany", name.getLand())) {
-                return name.getLandessprachlicherName();
-            }
-        }
-        return null;
-    }
     
     
     @Override
     public String toString() {
         return "Art [knoten_id=" + knoten_id + ", wissenschaftlicherName=" + wissenschaftlicherName
                 + ", gueltigerName2=" + gueltigerName2 + ", gruppe=" + gruppe + ", taxonomie=" + taxonomie
-                + ", synonyme=" + synonyme + ", landesprNamen=" + landesprNamen + ", regelwerke=" + regelwerke
-                + ", detaillierteSchutzdaten=" + detaillierteSchutzdaten + ", ergaenzendeAnmerkung="
-                + ergaenzendeAnmerkung + "]";
+                + ", synonyme=" + synonyme + ", deutscherName=" + deutscherName + ", englischerName=" + englischerName
+                + ", regelwerke=" + regelwerke + ", detaillierteSchutzdaten=" + detaillierteSchutzdaten
+                + ", ergaenzendeAnmerkung=" + ergaenzendeAnmerkung + "]";
     }
 
     public Integer getKnoten_id() {
@@ -92,14 +83,6 @@ public class Art implements Serializable {
         this.synonyme = synonyme;
     }
 
-    public List<LandessprachlicherName> getLandesprNamen() {
-        return landesprNamen;
-    }
-
-    public void setLandesprNamen(List<LandessprachlicherName> landesprNamen) {
-        this.landesprNamen = landesprNamen;
-    }
-
     public List<Regelwerk> getRegelwerke() {
         return regelwerke;
     }
@@ -122,5 +105,21 @@ public class Art implements Serializable {
 
     public void setErgaenzendeAnmerkung(String ergaenzendeAnmerkung) {
         this.ergaenzendeAnmerkung = ergaenzendeAnmerkung;
+    }
+
+    public String getDeutscherName() {
+        return deutscherName;
+    }
+
+    public void setDeutscherName(String deutscherName) {
+        this.deutscherName = deutscherName;
+    }
+
+    public String getEnglischerName() {
+        return englischerName;
+    }
+
+    public void setEnglischerName(String englischerName) {
+        this.englischerName = englischerName;
     }
 }

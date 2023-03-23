@@ -8,7 +8,6 @@ import org.apache.commons.lang3.StringUtils;
 import deringo.wisia.art.Anhang;
 import deringo.wisia.art.Art;
 import deringo.wisia.art.Fussnote;
-import deringo.wisia.art.LandessprachlicherName;
 import deringo.wisia.art.Regelwerk;
 import deringo.wisia.art.Unterschutzstellung;
 import deringo.wisia.taxon.TaxonInformation.DetaillierteSchutzdaten;
@@ -51,9 +50,17 @@ public class TaxonInformationTransformator {
         art.setGruppe(taxonInformation.gruppe);
         art.setTaxonomie(taxonInformation.taxonomie);
         for (LandesprName ln : taxonInformation.landesprNamen) {
-            LandessprachlicherName newLN = new LandessprachlicherName(ln.land(), ln.landesprName());
-            art.getLandesprNamen().add(newLN);
-            
+            switch (ln.land()) {
+            case "germany":
+                art.setDeutscherName(ln.landesprName());
+                break;
+            case "uk":
+                art.setEnglischerName(ln.landesprName());
+                break;
+            default:
+                System.err.println("unbekanntes Land : " + ln.land() + " (knotenId: "+taxonInformation.knotenId+")");
+                break;
+            }
         }
         
         for (Schutz schutz : taxonInformation.schutzListe) {
