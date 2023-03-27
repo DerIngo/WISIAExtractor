@@ -2,6 +2,8 @@ package deringo.wisia.taxon;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -102,9 +104,17 @@ public class TaxonInformationTransformator {
         
         if (taxonInformation.detaillierteSchutzdatenListe != null) {
             for (DetaillierteSchutzdaten schutz : taxonInformation.detaillierteSchutzdatenListe) {
+
+                String datumMitJahrhundert = schutz.datum();
+                Pattern r = Pattern.compile("(\\d\\d)\\.(\\d\\d)\\.(\\d\\d)");
+                Matcher m = r.matcher(schutz.datum());
+                if (m.find( )) {
+                    datumMitJahrhundert = String.format("%s.%s.19%s", m.group(1), m.group(2), m.group(3));
+                }
+                LocalDate datum = LocalDate.parse(datumMitJahrhundert, DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+
                 Unterschutzstellung unterschutz = new Unterschutzstellung();
                 unterschutz.setUnterschutzstellung(schutz.unterschutzstellung());
-                LocalDate datum = LocalDate.parse(schutz.datum(), DateTimeFormatter.ofPattern("dd.MM.yy"));
                 unterschutz.setDatum(datum);
                 unterschutz.setBemerkung(schutz.bemerkung());
                 art.getDetaillierteSchutzdaten().add(unterschutz);
