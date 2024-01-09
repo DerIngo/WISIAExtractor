@@ -51,6 +51,7 @@ public class TaxonInformationTransformator {
         art.setGueltigerName2(StringUtils.trim(taxonInformation.gueltigerName.gueltigerName2()));
         art.setGruppe(taxonInformation.gruppe);
         art.setTaxonomie(taxonInformation.taxonomie);
+        art.setSynonyme(taxonInformation.synonyme);
         for (LandesprName ln : taxonInformation.landesprNamen) {
             switch (ln.land()) {
             case "germany":
