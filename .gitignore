@@ -1,7 +1,12 @@
 /files/
 /src/main/resources/alleArten.obj
 
-/* Gitignore Maven*/
+/* Gitignore Eclipse */
+.classpath
+.project
+.settings
+
+/* Gitignore Maven */
 target/
 pom.xml.tag
 pom.xml.releaseBackup
