@@ -15,7 +15,7 @@ import deringo.wisia.taxon.TaxonInformationService;
 import deringo.wisia.taxon.TaxonPageService;
 
 public class WisiaExtraktor {
-    public static final int maxKnotenId = 54999;//54999;
+    public static final int maxKnotenId = 59999;//54999;
     
     /**
      * Liefert alle Fussnoten, die auf <a href="https://www.wisia.de/ShowFNDef">www.wisia.de/ShowFNDef</a> aufgelistet sind.
@@ -61,7 +61,7 @@ public class WisiaExtraktor {
      * Transformiert TaxonInformation zu Art zu den Knoten IDs 0 bis maxKnotenId
      */
     public static void transformTaxonInformation() {
-        for (int i= 0; i<maxKnotenId; i++) {
+        for (int i= 55000; i<=maxKnotenId; i++) {
             if (i%1000 == 0) {
                 System.out.println("Start transform " + i + " to " + (i+999));
             }
