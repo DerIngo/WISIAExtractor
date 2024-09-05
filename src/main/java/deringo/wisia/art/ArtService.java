@@ -83,4 +83,12 @@ public class ArtService {
         return (folderName + File.separator + (knotenId/1000) + File.separator + fileName + knotenId);
     }
 
+    public static void deleteArt(int knotenId) {
+        Path pathToFile = Paths.get(getFilename(knotenId));
+        try {
+            Files.deleteIfExists(pathToFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

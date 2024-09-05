@@ -86,4 +86,13 @@ public class TaxonInformationService {
 
         return false;
     }
+    
+    public static void deleteTaxonInformation(int knotenId) {
+        Path pathToFile = Paths.get(getFilename(knotenId));
+        try {
+            Files.deleteIfExists(pathToFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
