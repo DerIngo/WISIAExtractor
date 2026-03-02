@@ -24,7 +24,7 @@ flowchart TD
     C[Daten validieren] --> D
     D[Daten verarbeiten] --> E
     E[Daten exportieren] --> F
-    G[serialisiertes Objekt]
+    F[serialisiertes Objekt]
 ~~~
 
 ## In anderen Projekten verwenden
