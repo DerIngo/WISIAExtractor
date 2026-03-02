@@ -76,29 +76,25 @@ public class TaxonPageService {
     }
     
     private static void savePage(int knotenId) {
-        WebClient webClient = new WebClient(BrowserVersion.CHROME);
-        webClient.addRequestHeader("Accept-Charset", "utf-8");
-        webClient.getOptions().setCssEnabled(false);
-        webClient.getOptions().setJavaScriptEnabled(false);
-        webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
-        webClient.getOptions().setThrowExceptionOnScriptError(false);
-        webClient.getOptions().setPrintContentOnFailingStatusCode(false);
-        webClient.getCurrentWindow().getJobManager().removeAllJobs();
-        webClient.close();
-        
-        try {
+        try (WebClient webClient = new WebClient(BrowserVersion.CHROME)) {
+            webClient.addRequestHeader("Accept-Charset", "utf-8");
+            webClient.getOptions().setCssEnabled(false);
+            webClient.getOptions().setJavaScriptEnabled(false);
+            webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+            webClient.getOptions().setThrowExceptionOnScriptError(false);
+            webClient.getOptions().setPrintContentOnFailingStatusCode(false);
+            webClient.getCurrentWindow().getJobManager().removeAllJobs();
+
             HtmlPage page = webClient.getPage(TAXONINFORMATION + knotenId);
-            
+
             Path pathToFile = Paths.get(getFilename(knotenId));
             Files.createDirectories(pathToFile.getParent());
 
-            FileOutputStream fos = new FileOutputStream(getFilename(knotenId));
-            GZIPOutputStream gz = new GZIPOutputStream(fos);
-            ObjectOutputStream oos = new ObjectOutputStream(gz);
-            oos.writeObject(page);
-            
-            oos.close();
-            fos.close();
+            try (FileOutputStream fos = new FileOutputStream(getFilename(knotenId));
+                 GZIPOutputStream gz = new GZIPOutputStream(fos);
+                 ObjectOutputStream oos = new ObjectOutputStream(gz)) {
+                oos.writeObject(page);
+            }
          } catch (IOException e) {
             System.err.println("An error occurred: " + e);
          }

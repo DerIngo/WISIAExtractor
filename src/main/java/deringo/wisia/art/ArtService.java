@@ -28,7 +28,7 @@ public class ArtService {
         if (art == null && !loadOnly) {
             art = TaxonInformationTransformator.transform(knotenId);
             if (art != null) {
-                saveArt(knotenId);
+                saveArt(knotenId, art);
             }
         }
         return art;
@@ -59,9 +59,7 @@ public class ArtService {
         }
     }
     
-    private static void saveArt(Integer knotenId) {
-        Art art = TaxonInformationTransformator.transform(knotenId);
-
+    private static void saveArt(Integer knotenId, Art art) {
         try {
             Path pathToFile = Paths.get(getFilename(knotenId));
             Files.createDirectories(pathToFile.getParent());
