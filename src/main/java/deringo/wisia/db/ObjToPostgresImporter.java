@@ -122,7 +122,14 @@ public class ObjToPostgresImporter {
             int chunkSize)
             throws SQLException {
         String insertTaxon = "insert into taxon(import_run_id, knoten_id, wissenschaftlicher_name, gueltiger_name2, "
-                + "gruppe, deutscher_name, englischer_name, ergaenzende_anmerkung) values (?, ?, ?, ?, ?, ?, ?, ?)";
+                + "gruppe, deutscher_name, englischer_name, ergaenzende_anmerkung) values (?, ?, ?, ?, ?, ?, ?, ?) "
+                + "on conflict (import_run_id, knoten_id) do update set "
+                + "wissenschaftlicher_name = excluded.wissenschaftlicher_name, "
+                + "gueltiger_name2 = excluded.gueltiger_name2, "
+                + "gruppe = excluded.gruppe, "
+                + "deutscher_name = excluded.deutscher_name, "
+                + "englischer_name = excluded.englischer_name, "
+                + "ergaenzende_anmerkung = excluded.ergaenzende_anmerkung";
         String insertTaxonomie = "insert into taxon_taxonomie(import_run_id, knoten_id, position, element) "
                 + "values (?, ?, ?, ?) on conflict do nothing";
         String insertSynonym = "insert into taxon_synonym(import_run_id, knoten_id, synonym) "
