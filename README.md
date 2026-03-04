@@ -14,6 +14,49 @@ Grade der Teil mit der Datenextraktion ist "Learn as you code" entstanden und so
 ## Verwendung
 In der Klasse WisiaExtraktor sind die verwendbaren Aufrufe zu finden.
 
+## REST API (Read-only)
+Der REST-Service liest Arten aus `alleArten.obj`.
+
+Starten:
+
+~~~bash
+mvn spring-boot:run
+~~~
+
+Optional mit anderem Datenpfad:
+
+~~~bash
+mvn spring-boot:run -Dspring-boot.run.arguments=--wisia.data.file=/pfad/zu/alleArten.obj
+~~~
+
+### Endpunkte
+- `GET /api/v1/arten/{knotenId}`
+- `GET /api/v1/arten?name=&gruppe=&regelwerk=&anhang=&limit=&offset=`
+
+Beispiele:
+
+~~~bash
+curl "http://localhost:8080/api/v1/arten/1234"
+curl "http://localhost:8080/api/v1/arten?name=testudo&limit=20&offset=0"
+~~~
+
+### Swagger / OpenAPI
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8080/api-docs`
+
+### Fehlerformat
+Fehlerantworten sind einheitlich als JSON aufgebaut:
+
+~~~json
+{
+  "timestamp": "2026-03-04T12:34:56.789Z",
+  "status": 404,
+  "error": "Not Found",
+  "message": "Art mit knotenId 999999 nicht gefunden.",
+  "path": "/api/v1/arten/999999"
+}
+~~~
+
 ## Ablauf
 
 
