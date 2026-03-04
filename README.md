@@ -39,6 +39,7 @@ Optionen:
 - `wisia.db.user` (default: `wisia`)
 - `wisia.db.password` (default: `wisia`)
 - `wisia.import.limit` (default: `0` = ohne Limit, z. B. `500` fuer Testlaeufe)
+- `wisia.import.chunkSize` (default: `1000`, Commit pro Block)
 
 Der Import schreibt einen Lauf in `import_run` und verknuepft alle importierten Daten mit `import_run_id`.
 

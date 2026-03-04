@@ -44,14 +44,10 @@ public class ObjToPostgresImporter {
             Counters counters = new Counters();
 
             try {
-                connection.setAutoCommit(false);
-                importData(connection, runId, source.arten, counters, config.importLimit);
+                importData(connection, runId, source.arten, counters, config.importLimit, config.chunkSize);
                 updateImportRunSuccess(connection, runId, counters);
-                connection.commit();
                 System.out.printf(Locale.ROOT, "Import run %d finished successfully.%n", runId);
             } catch (Exception e) {
-                connection.rollback();
-                connection.setAutoCommit(true);
                 updateImportRunFailed(connection, runId, counters, e);
                 throw e;
             }
@@ -122,7 +118,8 @@ public class ObjToPostgresImporter {
         }
     }
 
-    private static void importData(Connection connection, long runId, List<Art> arten, Counters counters, int importLimit)
+    private static void importData(Connection connection, long runId, List<Art> arten, Counters counters, int importLimit,
+            int chunkSize)
             throws SQLException {
         String insertTaxon = "insert into taxon(import_run_id, knoten_id, wissenschaftlicher_name, gueltiger_name2, "
                 + "gruppe, deutscher_name, englischer_name, ergaenzende_anmerkung) values (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -149,161 +146,182 @@ public class ObjToPostgresImporter {
         Map<String, Long> regelwerkCache = new LinkedHashMap<>();
         Map<String, Long> anhangCache = new LinkedHashMap<>();
         Set<String> fussnoteCache = new LinkedHashSet<>();
+        int total = importLimit > 0 ? Math.min(importLimit, arten.size()) : arten.size();
         int processed = 0;
 
-        try (PreparedStatement psTaxon = connection.prepareStatement(insertTaxon);
-                PreparedStatement psTaxonomie = connection.prepareStatement(insertTaxonomie);
-                PreparedStatement psSynonym = connection.prepareStatement(insertSynonym);
-                PreparedStatement psUpsertRegelwerk = connection.prepareStatement(upsertRegelwerk);
-                PreparedStatement psTaxonRegelwerkName = connection.prepareStatement(insertTaxonRegelwerkName);
-                PreparedStatement psUpsertAnhang = connection.prepareStatement(upsertAnhang);
-                PreparedStatement psTaxonAnhang = connection.prepareStatement(upsertTaxonAnhang);
-                PreparedStatement psUpsertFussnote = connection.prepareStatement(upsertFussnote);
-                PreparedStatement psTaxonAnhangFussnote = connection.prepareStatement(insertTaxonAnhangFussnote);
-                PreparedStatement psSchutzdetail = connection.prepareStatement(insertSchutzdetail)) {
+        while (processed < total) {
+            int endExclusive = Math.min(processed + chunkSize, total);
+            Counters chunkCounters = new Counters();
 
-            for (Art art : arten) {
-                if (importLimit > 0 && processed >= importLimit) {
-                    break;
+            connection.setAutoCommit(false);
+            try (PreparedStatement psTaxon = connection.prepareStatement(insertTaxon);
+                    PreparedStatement psTaxonomie = connection.prepareStatement(insertTaxonomie);
+                    PreparedStatement psSynonym = connection.prepareStatement(insertSynonym);
+                    PreparedStatement psUpsertRegelwerk = connection.prepareStatement(upsertRegelwerk);
+                    PreparedStatement psTaxonRegelwerkName = connection.prepareStatement(insertTaxonRegelwerkName);
+                    PreparedStatement psUpsertAnhang = connection.prepareStatement(upsertAnhang);
+                    PreparedStatement psTaxonAnhang = connection.prepareStatement(upsertTaxonAnhang);
+                    PreparedStatement psUpsertFussnote = connection.prepareStatement(upsertFussnote);
+                    PreparedStatement psTaxonAnhangFussnote = connection.prepareStatement(insertTaxonAnhangFussnote);
+                    PreparedStatement psSchutzdetail = connection.prepareStatement(insertSchutzdetail)) {
+
+                for (int i = processed; i < endExclusive; i++) {
+                    Art art = arten.get(i);
+                    processArt(runId, art, chunkCounters, regelwerkCache, anhangCache, fussnoteCache, psTaxon, psTaxonomie,
+                            psSynonym, psUpsertRegelwerk, psTaxonRegelwerkName, psUpsertAnhang, psTaxonAnhang,
+                            psUpsertFussnote, psTaxonAnhangFussnote, psSchutzdetail);
                 }
-                if (art == null || art.getKnoten_id() == null) {
+
+                connection.commit();
+                counters.add(chunkCounters);
+                processed = endExclusive;
+                System.out.printf(Locale.ROOT, "Committed chunk: %d/%d Arten%n", processed, total);
+            } catch (Exception e) {
+                connection.rollback();
+                throw new SQLException("Chunk import failed at range " + processed + "-" + endExclusive, e);
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        }
+    }
+
+    private static void processArt(long runId, Art art, Counters counters, Map<String, Long> regelwerkCache,
+            Map<String, Long> anhangCache, Set<String> fussnoteCache, PreparedStatement psTaxon,
+            PreparedStatement psTaxonomie, PreparedStatement psSynonym, PreparedStatement psUpsertRegelwerk,
+            PreparedStatement psTaxonRegelwerkName, PreparedStatement psUpsertAnhang, PreparedStatement psTaxonAnhang,
+            PreparedStatement psUpsertFussnote, PreparedStatement psTaxonAnhangFussnote,
+            PreparedStatement psSchutzdetail) throws SQLException {
+        if (art == null || art.getKnoten_id() == null) {
+            return;
+        }
+        int knotenId = art.getKnoten_id();
+
+        psTaxon.setLong(1, runId);
+        psTaxon.setInt(2, knotenId);
+        psTaxon.setString(3, art.getWissenschaftlicherName());
+        psTaxon.setString(4, art.getGueltigerName2());
+        psTaxon.setString(5, art.getGruppe());
+        psTaxon.setString(6, art.getDeutscherName());
+        psTaxon.setString(7, art.getEnglischerName());
+        psTaxon.setString(8, art.getErgaenzendeAnmerkung());
+        psTaxon.executeUpdate();
+        counters.taxon++;
+
+        if (art.getTaxonomie() != null) {
+            for (int i = 0; i < art.getTaxonomie().size(); i++) {
+                String element = art.getTaxonomie().get(i);
+                if (element == null) {
                     continue;
                 }
-                processed++;
-                int knotenId = art.getKnoten_id();
+                psTaxonomie.setLong(1, runId);
+                psTaxonomie.setInt(2, knotenId);
+                psTaxonomie.setInt(3, i);
+                psTaxonomie.setString(4, element);
+                counters.taxonomie += psTaxonomie.executeUpdate();
+            }
+        }
 
-                psTaxon.setLong(1, runId);
-                psTaxon.setInt(2, knotenId);
-                psTaxon.setString(3, art.getWissenschaftlicherName());
-                psTaxon.setString(4, art.getGueltigerName2());
-                psTaxon.setString(5, art.getGruppe());
-                psTaxon.setString(6, art.getDeutscherName());
-                psTaxon.setString(7, art.getEnglischerName());
-                psTaxon.setString(8, art.getErgaenzendeAnmerkung());
-                psTaxon.executeUpdate();
-                counters.taxon++;
+        if (art.getSynonyme() != null) {
+            for (String synonym : art.getSynonyme()) {
+                if (synonym == null) {
+                    continue;
+                }
+                psSynonym.setLong(1, runId);
+                psSynonym.setInt(2, knotenId);
+                psSynonym.setString(3, synonym);
+                counters.synonym += psSynonym.executeUpdate();
+            }
+        }
 
-                if (art.getTaxonomie() != null) {
-                    for (int i = 0; i < art.getTaxonomie().size(); i++) {
-                        String element = art.getTaxonomie().get(i);
-                        if (element == null) {
+        if (art.getRegelwerke() != null) {
+            for (Regelwerk regelwerk : art.getRegelwerke()) {
+                if (regelwerk == null || regelwerk.getName() == null) {
+                    continue;
+                }
+                String regelwerkName = regelwerk.getName();
+                Long regelwerkId = regelwerkCache.get(regelwerkName);
+                if (regelwerkId == null) {
+                    regelwerkId = upsertRegelwerk(psUpsertRegelwerk, runId, regelwerkName);
+                    regelwerkCache.put(regelwerkName, regelwerkId);
+                    counters.regelwerk++;
+                }
+
+                if (regelwerk.getNamenImRegelwerk() != null) {
+                    for (String nameImRegelwerk : regelwerk.getNamenImRegelwerk()) {
+                        if (nameImRegelwerk == null) {
                             continue;
                         }
-                        psTaxonomie.setLong(1, runId);
-                        psTaxonomie.setInt(2, knotenId);
-                        psTaxonomie.setInt(3, i);
-                        psTaxonomie.setString(4, element);
-                        counters.taxonomie += psTaxonomie.executeUpdate();
+                        psTaxonRegelwerkName.setLong(1, runId);
+                        psTaxonRegelwerkName.setInt(2, knotenId);
+                        psTaxonRegelwerkName.setLong(3, regelwerkId);
+                        psTaxonRegelwerkName.setString(4, nameImRegelwerk);
+                        psTaxonRegelwerkName.executeUpdate();
                     }
                 }
 
-                if (art.getSynonyme() != null) {
-                    for (String synonym : art.getSynonyme()) {
-                        if (synonym == null) {
+                if (regelwerk.getAnhaenge() != null) {
+                    for (Anhang anhang : regelwerk.getAnhaenge()) {
+                        if (anhang == null || anhang.getName() == null) {
                             continue;
                         }
-                        psSynonym.setLong(1, runId);
-                        psSynonym.setInt(2, knotenId);
-                        psSynonym.setString(3, synonym);
-                        counters.synonym += psSynonym.executeUpdate();
-                    }
-                }
-
-                if (art.getRegelwerke() != null) {
-                    for (Regelwerk regelwerk : art.getRegelwerke()) {
-                        if (regelwerk == null || regelwerk.getName() == null) {
-                            continue;
-                        }
-                        String regelwerkName = regelwerk.getName();
-                        Long regelwerkId = regelwerkCache.get(regelwerkName);
-                        if (regelwerkId == null) {
-                            regelwerkId = upsertRegelwerk(psUpsertRegelwerk, runId, regelwerkName);
-                            regelwerkCache.put(regelwerkName, regelwerkId);
-                            counters.regelwerk++;
+                        String anhangKey = regelwerkId + "|" + anhang.getName();
+                        Long anhangId = anhangCache.get(anhangKey);
+                        if (anhangId == null) {
+                            anhangId = upsertAnhang(psUpsertAnhang, runId, regelwerkId, anhang.getName());
+                            anhangCache.put(anhangKey, anhangId);
+                            counters.anhang++;
                         }
 
-                        if (regelwerk.getNamenImRegelwerk() != null) {
-                            for (String nameImRegelwerk : regelwerk.getNamenImRegelwerk()) {
-                                if (nameImRegelwerk == null) {
+                        psTaxonAnhang.setLong(1, runId);
+                        psTaxonAnhang.setInt(2, knotenId);
+                        psTaxonAnhang.setLong(3, anhangId);
+                        psTaxonAnhang.setString(4, null);
+                        psTaxonAnhang.executeUpdate();
+
+                        if (anhang.getFussnoten() != null) {
+                            for (deringo.wisia.art.Fussnote fussnote : anhang.getFussnoten()) {
+                                if (fussnote == null) {
                                     continue;
                                 }
-                                psTaxonRegelwerkName.setLong(1, runId);
-                                psTaxonRegelwerkName.setInt(2, knotenId);
-                                psTaxonRegelwerkName.setLong(3, regelwerkId);
-                                psTaxonRegelwerkName.setString(4, nameImRegelwerk);
-                                psTaxonRegelwerkName.executeUpdate();
-                            }
-                        }
-
-                        if (regelwerk.getAnhaenge() != null) {
-                            for (Anhang anhang : regelwerk.getAnhaenge()) {
-                                if (anhang == null || anhang.getName() == null) {
+                                String fussnoteId = normalizeFussnoteId(fussnote.getId(), fussnote.getText());
+                                if (fussnoteId == null || fussnote.getText() == null) {
                                     continue;
                                 }
-                                String anhangKey = regelwerkId + "|" + anhang.getName();
-                                Long anhangId = anhangCache.get(anhangKey);
-                                if (anhangId == null) {
-                                    anhangId = upsertAnhang(psUpsertAnhang, runId, regelwerkId, anhang.getName());
-                                    anhangCache.put(anhangKey, anhangId);
-                                    counters.anhang++;
+
+                                if (!fussnoteCache.contains(fussnoteId)) {
+                                    psUpsertFussnote.setLong(1, runId);
+                                    psUpsertFussnote.setString(2, fussnoteId);
+                                    psUpsertFussnote.setString(3, fussnote.getText());
+                                    psUpsertFussnote.executeUpdate();
+                                    fussnoteCache.add(fussnoteId);
+                                    counters.fussnote++;
                                 }
 
-                                psTaxonAnhang.setLong(1, runId);
-                                psTaxonAnhang.setInt(2, knotenId);
-                                psTaxonAnhang.setLong(3, anhangId);
-                                psTaxonAnhang.setString(4, null);
-                                psTaxonAnhang.executeUpdate();
-
-                                if (anhang.getFussnoten() != null) {
-                                    for (deringo.wisia.art.Fussnote fussnote : anhang.getFussnoten()) {
-                                        if (fussnote == null) {
-                                            continue;
-                                        }
-                                        String fussnoteId = normalizeFussnoteId(fussnote.getId(), fussnote.getText());
-                                        if (fussnoteId == null || fussnote.getText() == null) {
-                                            continue;
-                                        }
-
-                                        if (!fussnoteCache.contains(fussnoteId)) {
-                                            psUpsertFussnote.setLong(1, runId);
-                                            psUpsertFussnote.setString(2, fussnoteId);
-                                            psUpsertFussnote.setString(3, fussnote.getText());
-                                            psUpsertFussnote.executeUpdate();
-                                            fussnoteCache.add(fussnoteId);
-                                            counters.fussnote++;
-                                        }
-
-                                        psTaxonAnhangFussnote.setLong(1, runId);
-                                        psTaxonAnhangFussnote.setInt(2, knotenId);
-                                        psTaxonAnhangFussnote.setLong(3, anhangId);
-                                        psTaxonAnhangFussnote.setString(4, fussnoteId);
-                                        psTaxonAnhangFussnote.executeUpdate();
-                                    }
-                                }
+                                psTaxonAnhangFussnote.setLong(1, runId);
+                                psTaxonAnhangFussnote.setInt(2, knotenId);
+                                psTaxonAnhangFussnote.setLong(3, anhangId);
+                                psTaxonAnhangFussnote.setString(4, fussnoteId);
+                                psTaxonAnhangFussnote.executeUpdate();
                             }
                         }
                     }
                 }
+            }
+        }
 
-                if (art.getDetaillierteSchutzdaten() != null) {
-                    for (int i = 0; i < art.getDetaillierteSchutzdaten().size(); i++) {
-                        Unterschutzstellung schutz = art.getDetaillierteSchutzdaten().get(i);
-                        if (schutz == null || schutz.getUnterschutzstellung() == null) {
-                            continue;
-                        }
-                        psSchutzdetail.setLong(1, runId);
-                        psSchutzdetail.setInt(2, knotenId);
-                        psSchutzdetail.setInt(3, i);
-                        psSchutzdetail.setString(4, schutz.getUnterschutzstellung());
-                        psSchutzdetail.setDate(5, schutz.getDatum() == null ? null : Date.valueOf(schutz.getDatum()));
-                        psSchutzdetail.setString(6, schutz.getBemerkung());
-                        counters.schutzdetail += psSchutzdetail.executeUpdate();
-                    }
+        if (art.getDetaillierteSchutzdaten() != null) {
+            for (int i = 0; i < art.getDetaillierteSchutzdaten().size(); i++) {
+                Unterschutzstellung schutz = art.getDetaillierteSchutzdaten().get(i);
+                if (schutz == null || schutz.getUnterschutzstellung() == null) {
+                    continue;
                 }
-
-                if (processed % 1000 == 0) {
-                    System.out.printf(Locale.ROOT, "Processed %d Arten%n", processed);
-                }
+                psSchutzdetail.setLong(1, runId);
+                psSchutzdetail.setInt(2, knotenId);
+                psSchutzdetail.setInt(3, i);
+                psSchutzdetail.setString(4, schutz.getUnterschutzstellung());
+                psSchutzdetail.setDate(5, schutz.getDatum() == null ? null : Date.valueOf(schutz.getDatum()));
+                psSchutzdetail.setString(6, schutz.getBemerkung());
+                counters.schutzdetail += psSchutzdetail.executeUpdate();
             }
         }
     }
@@ -392,7 +410,7 @@ public class ObjToPostgresImporter {
     }
 
     private record Config(String dataFile, String jdbcUrl, String dbUser, String dbPassword, String parserVersion,
-            int importLimit) {
+            int importLimit, int chunkSize) {
         static Config load() {
             String dataFile = value("wisia.data.file", "WISIA_DATA_FILE", "files/export/alleArten.obj");
             String jdbcUrl = value("wisia.db.url", "WISIA_DB_URL", "jdbc:postgresql://localhost:5432/wisia");
@@ -401,7 +419,11 @@ public class ObjToPostgresImporter {
             String parserVersion = value("wisia.import.parserVersion", "WISIA_IMPORT_PARSER_VERSION",
                     "obj-importer-v1");
             int importLimit = Integer.parseInt(value("wisia.import.limit", "WISIA_IMPORT_LIMIT", "0"));
-            return new Config(dataFile, jdbcUrl, dbUser, dbPassword, parserVersion, importLimit);
+            int chunkSize = Integer.parseInt(value("wisia.import.chunkSize", "WISIA_IMPORT_CHUNK_SIZE", "1000"));
+            if (chunkSize < 1) {
+                throw new IllegalArgumentException("wisia.import.chunkSize must be >= 1");
+            }
+            return new Config(dataFile, jdbcUrl, dbUser, dbPassword, parserVersion, importLimit, chunkSize);
         }
 
         private static String value(String sysProp, String envVar, String defaultValue) {
@@ -425,6 +447,16 @@ public class ObjToPostgresImporter {
         int anhang;
         int fussnote;
         int schutzdetail;
+
+        void add(Counters other) {
+            taxon += other.taxon;
+            synonym += other.synonym;
+            taxonomie += other.taxonomie;
+            regelwerk += other.regelwerk;
+            anhang += other.anhang;
+            fussnote += other.fussnote;
+            schutzdetail += other.schutzdetail;
+        }
 
         String toJson() {
             return String.format(Locale.ROOT,
