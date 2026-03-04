@@ -14,6 +14,34 @@ Grade der Teil mit der Datenextraktion ist "Learn as you code" entstanden und so
 ## Verwendung
 In der Klasse WisiaExtraktor sind die verwendbaren Aufrufe zu finden.
 
+## PostgreSQL-Import aus `alleArten.obj`
+
+### 1) Datenbank starten
+~~~bash
+cp --update=none db/.env.example db/.env
+docker compose -f db/docker-compose.yml --env-file db/.env up -d
+~~~
+
+### 2) Schema anlegen
+~~~bash
+cat db/sql/001_init_schema.sql | docker exec -i wisia-postgres psql -U wisia -d wisia
+~~~
+
+### 3) Import aus `.obj` ausfuehren
+~~~bash
+mvn -q -DskipTests exec:java \
+  -Dexec.mainClass=deringo.wisia.db.ObjToPostgresImporter \
+  -Dwisia.data.file=arten/alleArten.obj
+~~~
+
+Optionen:
+- `wisia.db.url` (default: `jdbc:postgresql://localhost:5432/wisia`)
+- `wisia.db.user` (default: `wisia`)
+- `wisia.db.password` (default: `wisia`)
+- `wisia.import.limit` (default: `0` = ohne Limit, z. B. `500` fuer Testlaeufe)
+
+Der Import schreibt einen Lauf in `import_run` und verknuepft alle importierten Daten mit `import_run_id`.
+
 ## Ablauf
 
 

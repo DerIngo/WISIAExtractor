@@ -1,5 +1,6 @@
 /files/
 /src/main/resources/alleArten.obj
+db/.env
 
 /* Gitignore Eclipse */
 .classpath
